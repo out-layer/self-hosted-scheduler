@@ -1,0 +1,75 @@
+# OutLayer Scheduler Configuration
+# Copy to scheduler.toml and customize for your agent.
+# Secrets use ${ENV_VAR} syntax — set them in .env or environment.
+
+[agent]
+# Your OutLayer project (required)
+project_owner = "alice.near"
+project_name = "my-agent"
+
+# OutLayer API (default: mainnet)
+coordinator_url = "https://api.outlayer.fastnear.com"
+
+# Authentication (required)
+# Create via OutLayer dashboard or CLI: outlayer keys create
+payment_key = "${PAYMENT_KEY}"
+
+# Secrets profile passed to WASI (optional)
+# Your agent receives these as environment variables inside TEE
+# secrets_profile = "default"
+# secrets_account_id = "alice.near"
+
+[triggers]
+# Interval trigger: call agent every N seconds
+interval_secs = 60
+
+# Storage-diff trigger (optional): call agent when a storage key changes
+# Reads public storage and compares with previous value
+[triggers.storage_diff]
+enabled = false
+keys = ["state:last_update", "data:price"]
+project_uuid = "p0000000000000001"
+threshold_percent = 1.0  # for numeric values: trigger if diff > N%
+
+# Webhook trigger (optional): expose HTTP endpoint for external triggers
+[triggers.webhook]
+enabled = false
+port = 9090
+path = "/trigger"
+# secret = "${WEBHOOK_SECRET}"
+
+[input]
+# Static input passed to every invocation (optional)
+# Your WASI agent receives this via stdin
+[input.static]
+command = "tick"
+
+# Include trigger metadata in input
+include_trigger_reason = true  # adds "trigger": "interval" | "storage_diff" | "webhook"
+
+[resources]
+# Resource limits for each execution (optional, defaults shown)
+max_instructions = 1_000_000_000
+max_memory_mb = 128
+max_execution_seconds = 60
+
+# Compute budget per call in stablecoin micro-units
+compute_limit = 10000  # $0.01
+
+# Developer payment per call in stablecoin micro-units
+attached_deposit = 0
+
+[alerts]
+# Telegram alerts for failures (optional)
+# telegram_bot_token = "${TELEGRAM_BOT_TOKEN}"
+# telegram_chat_id = "${TELEGRAM_CHAT_ID}"
+
+# Alert after N consecutive failures (default: 3)
+failure_threshold = 3
+
+# Cooldown between repeated alerts in seconds (default: 600 = 10 min)
+alert_cooldown_secs = 600
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"

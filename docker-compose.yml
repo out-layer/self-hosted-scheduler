@@ -1,0 +1,11 @@
+services:
+  scheduler:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./scheduler.toml:/etc/outlayer/scheduler.toml:ro
+    ports:
+      - "9090:9090"  # only needed if webhook trigger is enabled
+    environment:
+      RUST_LOG: info
