@@ -230,6 +230,19 @@ fn validate(config: &Config) -> Result<()> {
         !config.agent.payment_key.is_empty() && !config.agent.payment_key.contains("${"),
         "agent.payment_key is required (set the env var if using ${{...}} syntax)"
     );
+    {
+        // The payment key is sent to coordinator_url in a header — require TLS so
+        // it can't be sniffed in transit (localhost is exempt for local testing).
+        let url = &config.agent.coordinator_url;
+        let is_local = url.starts_with("http://localhost")
+            || url.starts_with("http://127.0.0.1")
+            || url.starts_with("http://[::1]");
+        anyhow::ensure!(
+            url.starts_with("https://") || is_local,
+            "agent.coordinator_url must use https:// (the payment key is sent in a request header): {}",
+            url
+        );
+    }
     anyhow::ensure!(
         config.triggers.interval_secs > 0,
         "triggers.interval_secs must be > 0"

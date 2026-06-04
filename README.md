@@ -93,7 +93,7 @@ cargo run --release -- --config scheduler.toml
 |-------|----------|---------|-------------|
 | `project_owner` | yes | — | NEAR account owning the project |
 | `project_name` | yes | — | OutLayer project name |
-| `coordinator_url` | no | `https://api.outlayer.fastnear.com` | OutLayer API endpoint |
+| `coordinator_url` | no | `https://api.outlayer.fastnear.com` | OutLayer API endpoint (**must be `https://`** — the payment key is sent in a header; redirects are not followed) |
 | `payment_key` | yes | — | Payment key (`owner:nonce:secret`). Use `${PAYMENT_KEY}` to read from env |
 | `secrets_profile` | no | — | Secrets profile name passed to WASI |
 | `secrets_account_id` | no | — | NEAR account for secrets lookup |
@@ -124,16 +124,20 @@ On first startup, storage values are cached without triggering, to avoid false t
 | Field | Default | Description |
 |-------|---------|-------------|
 | `enabled` | `false` | Enable webhook HTTP server |
+| `bind` | `127.0.0.1` | Bind address. **Local-only by default.** Set `0.0.0.0` to expose — a `secret` is then **required**. |
 | `port` | `9090` | Port to listen on |
 | `path` | `/trigger` | Path for trigger endpoint |
-| `secret` | — | Shared secret for authentication (optional) |
+| `secret` | — | Shared secret (sent as `X-Webhook-Secret`). **Required** when `bind` is not loopback. |
+| `max_per_minute` | `60` | Max accepted triggers per minute (each is a **paid** execution). `0` = unlimited. |
+
+> ⚠️ **Each accepted POST triggers a paid execution** that spends your payment-key budget. The endpoint is loopback-only and rate-limited by default. To expose it to the network (or through Docker), set `bind = "0.0.0.0"` **and** a `secret` — the scheduler refuses to start an exposed, secret-less webhook.
 
 When enabled, the scheduler starts an HTTP server with two endpoints:
 
 **`POST {path}`** — trigger agent execution:
 
 ```bash
-curl -X POST http://your-server:9090/trigger \
+curl -X POST http://127.0.0.1:9090/trigger \
   -H "X-Webhook-Secret: your_secret" \
   -H "Content-Type: application/json" \
   -d '{"event": "new_order", "data": {"amount": 100}}'

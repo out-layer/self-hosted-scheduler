@@ -62,6 +62,11 @@ async fn main() -> anyhow::Result<()> {
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(120))
+        // Never follow redirects: requests carry the payment key in an
+        // X-Payment-Key header, and reqwest does NOT strip custom headers on a
+        // cross-host redirect — a malicious/compromised coordinator_url could
+        // 3xx the call elsewhere and harvest the key. The API needs no redirects.
+        .redirect(reqwest::redirect::Policy::none())
         .build()?;
 
     let config = Arc::new(config);
