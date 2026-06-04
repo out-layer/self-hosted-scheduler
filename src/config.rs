@@ -61,15 +61,40 @@ fn default_threshold() -> f64 {
     1.0
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct WebhookConfig {
     #[serde(default)]
     pub enabled: bool,
+    /// Bind address. Defaults to loopback (local-only). Set "0.0.0.0" to expose
+    /// it — a secret is then required (enforced in `validate`).
+    #[serde(default = "default_webhook_bind")]
+    pub bind: String,
     #[serde(default = "default_webhook_port")]
     pub port: u16,
     #[serde(default = "default_webhook_path")]
     pub path: String,
     pub secret: Option<String>,
+    /// Max accepted triggers per 60s window. Each accepted trigger is a PAID
+    /// execution, so this bounds budget drain from flooding. 0 disables it.
+    #[serde(default = "default_webhook_max_per_minute")]
+    pub max_per_minute: u32,
+}
+
+impl Default for WebhookConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bind: default_webhook_bind(),
+            port: default_webhook_port(),
+            path: default_webhook_path(),
+            secret: None,
+            max_per_minute: default_webhook_max_per_minute(),
+        }
+    }
+}
+
+fn default_webhook_bind() -> String {
+    "127.0.0.1".to_string()
 }
 
 fn default_webhook_port() -> u16 {
@@ -78,6 +103,10 @@ fn default_webhook_port() -> u16 {
 
 fn default_webhook_path() -> String {
     "/trigger".to_string()
+}
+
+fn default_webhook_max_per_minute() -> u32 {
+    60
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -217,7 +246,59 @@ fn validate(config: &Config) -> Result<()> {
         );
     }
 
+    validate_webhook(&config.triggers.webhook)?;
+
     Ok(())
+}
+
+/// A webhook bound to a non-loopback address MUST have a secret — otherwise
+/// anyone who can reach the port can fire paid executions. Loopback-only
+/// (the default) needs no secret.
+fn validate_webhook(w: &WebhookConfig) -> Result<()> {
+    if !w.enabled {
+        return Ok(());
+    }
+    let is_loopback = w
+        .bind
+        .parse::<std::net::IpAddr>()
+        .map(|ip| ip.is_loopback())
+        .unwrap_or(false); // unparseable → treat as exposed (fail-safe)
+    anyhow::ensure!(
+        is_loopback || w.secret.is_some(),
+        "triggers.webhook is enabled and bound to a non-loopback address ('{}') without a secret. \
+         Set triggers.webhook.secret, or bind to 127.0.0.1 (e.g. behind a reverse proxy) for local-only use.",
+        w.bind
+    );
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn wh(enabled: bool, bind: &str, secret: Option<&str>) -> WebhookConfig {
+        WebhookConfig {
+            enabled,
+            bind: bind.to_string(),
+            secret: secret.map(|s| s.to_string()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn webhook_exposed_without_secret_is_rejected() {
+        assert!(validate_webhook(&wh(true, "0.0.0.0", None)).is_err());
+        assert!(validate_webhook(&wh(true, "192.168.1.10", None)).is_err());
+        assert!(validate_webhook(&wh(true, "example.com", None)).is_err()); // unparseable → fail-safe
+    }
+
+    #[test]
+    fn webhook_safe_configs_pass() {
+        assert!(validate_webhook(&wh(true, "127.0.0.1", None)).is_ok()); // loopback, no secret ok
+        assert!(validate_webhook(&wh(true, "::1", None)).is_ok()); // ipv6 loopback
+        assert!(validate_webhook(&wh(true, "0.0.0.0", Some("s3cr3t"))).is_ok()); // exposed + secret
+        assert!(validate_webhook(&wh(false, "0.0.0.0", None)).is_ok()); // disabled → skip
+    }
 }
 
 /// Convert a toml::Value to serde_json::Value.

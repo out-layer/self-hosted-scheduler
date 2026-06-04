@@ -6,6 +6,8 @@ services:
     volumes:
       - ./scheduler.toml:/etc/outlayer/scheduler.toml:ro
     ports:
-      - "9090:9090"  # only needed if webhook trigger is enabled
+      - "9090:9090"  # only if webhook enabled. To reach it through Docker, set
+                     # triggers.webhook.bind = "0.0.0.0" — which then REQUIRES a
+                     # secret (config validation refuses an exposed, secret-less webhook).
     environment:
       RUST_LOG: info

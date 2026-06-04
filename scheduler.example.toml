@@ -31,12 +31,15 @@ keys = ["state:last_update", "data:price"]
 project_uuid = "p0000000000000001"
 threshold_percent = 1.0  # for numeric values: trigger if diff > N%
 
-# Webhook trigger (optional): expose HTTP endpoint for external triggers
+# Webhook trigger (optional): HTTP endpoint that fires a PAID execution per POST.
+# Secure defaults: binds to loopback and rate-limits to 60/min.
 [triggers.webhook]
 enabled = false
+bind = "127.0.0.1"        # local-only. Set "0.0.0.0" to expose — a secret is then REQUIRED.
 port = 9090
 path = "/trigger"
-# secret = "${WEBHOOK_SECRET}"
+# secret = "${WEBHOOK_SECRET}"   # REQUIRED for non-loopback bind (incl. Docker). Caller sends header: X-Webhook-Secret
+max_per_minute = 60       # max accepted triggers per 60s (each is a paid execution). 0 = unlimited.
 
 [input]
 # Static input passed to every invocation (optional)
