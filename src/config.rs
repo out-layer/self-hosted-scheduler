@@ -28,7 +28,7 @@ pub struct AgentConfig {
 }
 
 fn default_coordinator_url() -> String {
-    "https://api.outlayer.fastnear.com".to_string()
+    "https://api.outlayer.ai".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize)]

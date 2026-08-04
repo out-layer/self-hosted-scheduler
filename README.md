@@ -93,7 +93,7 @@ cargo run --release -- --config scheduler.toml
 |-------|----------|---------|-------------|
 | `project_owner` | yes | — | NEAR account owning the project |
 | `project_name` | yes | — | OutLayer project name |
-| `coordinator_url` | no | `https://api.outlayer.fastnear.com` | OutLayer API endpoint (**must be `https://`** — the payment key is sent in a header; redirects are not followed) |
+| `coordinator_url` | no | `https://api.outlayer.ai` | OutLayer API endpoint (**must be `https://`** — the payment key is sent in a header; redirects are not followed) |
 | `payment_key` | yes | — | Payment key (`owner:nonce:secret`). Use `${PAYMENT_KEY}` to read from env |
 | `secrets_profile` | no | — | Secrets profile name passed to WASI |
 | `secrets_account_id` | no | — | NEAR account for secrets lookup |
@@ -230,7 +230,7 @@ The scheduler logs all decisions at `info` level:
 ```
 INFO  Starting outlayer-scheduler v0.1.0
 INFO  Project: alice.near/my-agent
-INFO  Coordinator: https://api.outlayer.fastnear.com
+INFO  Coordinator: https://api.outlayer.ai
 INFO  Triggers: interval=60s, storage_diff=disabled, webhook=disabled
 INFO  [interval] Triggering execution
 INFO  [interval] Execution completed: status=completed, cost=1920 micro-units, time=230ms
@@ -293,7 +293,7 @@ The scheduler uses two OutLayer API endpoints:
 ### 1. Execute agent
 
 ```
-POST https://api.outlayer.fastnear.com/call/{project_owner}/{project_name}
+POST https://api.outlayer.ai/call/{project_owner}/{project_name}
 
 Headers:
   X-Payment-Key: owner:nonce:secret
@@ -325,7 +325,7 @@ Response:
 ### 2. Read public storage (for storage-diff trigger)
 
 ```
-POST https://api.outlayer.fastnear.com/public/storage/batch
+POST https://api.outlayer.ai/public/storage/batch
 
 Body:
 {

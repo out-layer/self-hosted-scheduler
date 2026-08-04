@@ -8,7 +8,7 @@ project_owner = "alice.near"
 project_name = "my-agent"
 
 # OutLayer API (default: mainnet)
-coordinator_url = "https://api.outlayer.fastnear.com"
+coordinator_url = "https://api.outlayer.ai"
 
 # Authentication (required)
 # Create via OutLayer dashboard or CLI: outlayer keys create
