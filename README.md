@@ -1,6 +1,6 @@
 # OutLayer Scheduler
 
-Config-driven scheduler for autonomous [OutLayer](https://outlayer.fastnear.com) agents. Runs on your server, triggers your WASI agent on schedule or in response to events.
+Config-driven scheduler for autonomous [OutLayer](https://app.outlayer.ai) agents. Runs on your server, triggers your WASI agent on schedule or in response to events.
 
 ## Architecture
 
@@ -68,7 +68,7 @@ Edit `.env`:
 PAYMENT_KEY=alice.near:1:your_secret_key_hex_here
 ```
 
-Create a payment key via the [OutLayer dashboard](https://outlayer.fastnear.com/dashboard) or CLI: `outlayer keys create`.
+Create a payment key via the [OutLayer dashboard](https://app.outlayer.ai) or CLI: `outlayer keys create`.
 
 ### 4. Run
 
